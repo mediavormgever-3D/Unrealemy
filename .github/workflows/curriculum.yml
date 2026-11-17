@@ -1,0 +1,25 @@
+name: Leerlijnen controleren
+
+on:
+  pull_request:
+    paths:
+      - "Plugins/CurriculumCore/Curriculum/**"
+      - "Plugins/CurriculumCore/Content/Python/**"
+      - "Tools/**"
+      - ".github/workflows/curriculum.yml"
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install jsonschema==4.26.0
+      - name: Schema en verwijzingen
+        run: python Tools/validate_curriculum.py
+      - name: Hoofdstukken afspelen
+        run: python -m unittest discover -s Tools/tests -v

@@ -1,0 +1,12 @@
+{
+  "id": "foundation.details",
+  "description": "Viewport, Outliner en Details.",
+  "hide_tabs": [
+    "PlacementBrowser",
+    "ContentBrowserTab1"
+  ],
+  "show_tabs": [
+    "LevelEditorSceneOutliner",
+    "LevelEditorSelectionDetails"
+  ]
+}

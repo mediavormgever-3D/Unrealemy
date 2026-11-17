@@ -1,0 +1,283 @@
+{
+  "id": "t1.c01",
+  "number": 1,
+  "title": "Eerste stappen",
+  "summary": "Rondkijken, selecteren, verplaatsen, draaien, schalen en je eerste lamp.",
+  "starter_map": "/Engine/Maps/Templates/Template_Default",
+  "setup": "t1_c01.setup",
+  "ui_profile": "foundation.viewport",
+  "steps": [
+    {
+      "id": "t1.c01.s01",
+      "title": "Kijk rond",
+      "instruction": "Houd de rechtermuisknop ingedrukt in de viewport en beweeg de muis.",
+      "hints": [
+        "De viewport is het grote 3D-venster in het midden van het scherm."
+      ],
+      "highlight": {
+        "tab": "LevelEditorViewport"
+      },
+      "validate": {
+        "type": "viewport_camera_rotated",
+        "min_degrees": 25
+      },
+      "solve": "t1_c01.solve_s01"
+    },
+    {
+      "id": "t1.c01.s02",
+      "title": "Vlieg door de ruimte",
+      "instruction": "Houd de rechtermuisknop ingedrukt en druk op W, A, S of D om te vliegen.",
+      "hints": [
+        "Laat de rechtermuisknop niet los terwijl je de toetsen indrukt."
+      ],
+      "highlight": {
+        "tab": "LevelEditorViewport"
+      },
+      "validate": {
+        "type": "viewport_camera_moved",
+        "min_distance": 300
+      },
+      "solve": "t1_c01.solve_s02"
+    },
+    {
+      "id": "t1.c01.s03",
+      "title": "Selecteer de kubus",
+      "instruction": "Klik in de viewport op de kubus.",
+      "hints": [
+        "Zie je de kubus niet meer? Klik rechts in de Outliner op 'Kubus'.",
+        "Een geselecteerd object krijgt een oranje rand."
+      ],
+      "ui_profile": "foundation.outliner",
+      "highlight": {
+        "tab": "LevelEditorSceneOutliner"
+      },
+      "validate": {
+        "type": "selection_is",
+        "actor": {
+          "label": "Kubus"
+        }
+      },
+      "solve": "t1_c01.solve_s03"
+    },
+    {
+      "id": "t1.c01.s04",
+      "title": "Zoom in op je selectie",
+      "instruction": "Druk op F. De camera vliegt naar de geselecteerde kubus.",
+      "hints": [
+        "Klik eerst één keer in de viewport, zodat die de toetsaanslag ontvangt."
+      ],
+      "ui_profile": "foundation.outliner",
+      "highlight": {
+        "tab": "LevelEditorViewport"
+      },
+      "validate": {
+        "all": [
+          {
+            "type": "viewport_camera_moved",
+            "min_distance": 20,
+            "message": "Selecteer de kubus, zet je muis boven de viewport en druk op F."
+          },
+          {
+            "type": "viewport_looks_at",
+            "actor": {
+              "label": "Kubus"
+            },
+            "max_angle": 12,
+            "max_distance": 900
+          }
+        ]
+      },
+      "solve": "t1_c01.solve_s04"
+    },
+    {
+      "id": "t1.c01.s05",
+      "title": "Verplaats de kubus",
+      "instruction": "Druk op W en sleep de rode pijl. Rood is de X-as.",
+      "hints": [
+        "Rood is X, groen is Y, blauw is Z. Dat is overal in Unreal zo."
+      ],
+      "ui_profile": "foundation.outliner",
+      "highlight": {
+        "tab": "LevelEditorViewport"
+      },
+      "validate": {
+        "type": "actor_moved",
+        "actor": {
+          "label": "Kubus"
+        },
+        "min_distance": 100
+      },
+      "solve": "t1_c01.solve_s05"
+    },
+    {
+      "id": "t1.c01.s06",
+      "title": "Naar de oorsprong",
+      "instruction": "Typ in het Details-paneel bij Location: X 0, Y 0 en Z 0.",
+      "hints": [
+        "Het Details-paneel toont de eigenschappen van wat je geselecteerd hebt.",
+        "Druk na elk getal op Enter of Tab."
+      ],
+      "ui_profile": "foundation.details",
+      "highlight": {
+        "tab": "LevelEditorSelectionDetails"
+      },
+      "validate": {
+        "type": "transform_near",
+        "actor": {
+          "label": "Kubus"
+        },
+        "location": [
+          0,
+          0,
+          0
+        ],
+        "tolerance": 1
+      },
+      "solve": "t1_c01.solve_s06"
+    },
+    {
+      "id": "t1.c01.s07",
+      "title": "Til de kubus op",
+      "instruction": "De kubus zit half in de vloer: het draaipunt zit in het midden. Zet Z op 50.",
+      "hints": [
+        "De kubus is 100 hoog. De helft daarvan is 50."
+      ],
+      "ui_profile": "foundation.details",
+      "highlight": {
+        "tab": "LevelEditorSelectionDetails"
+      },
+      "validate": {
+        "type": "transform_near",
+        "actor": {
+          "label": "Kubus"
+        },
+        "location": [
+          0,
+          0,
+          50
+        ],
+        "tolerance": 1
+      },
+      "solve": "t1_c01.solve_s07"
+    },
+    {
+      "id": "t1.c01.s08",
+      "title": "Draai de kubus",
+      "instruction": "Typ bij Rotation voor Z de waarde 45.",
+      "hints": [
+        "Draaien om de Z-as is draaien om de blauwe as: de kubus tolt op de vloer."
+      ],
+      "ui_profile": "foundation.details",
+      "highlight": {
+        "tab": "LevelEditorSelectionDetails"
+      },
+      "validate": {
+        "type": "transform_near",
+        "actor": {
+          "label": "Kubus"
+        },
+        "rotation": [
+          0,
+          0,
+          45
+        ],
+        "rotation_tolerance": 1
+      },
+      "solve": "t1_c01.solve_s08"
+    },
+    {
+      "id": "t1.c01.s09",
+      "title": "Maak de kubus groter",
+      "instruction": "Typ bij Scale drie keer een 2: X 2, Y 2 en Z 2.",
+      "hints": [
+        "Met het slotje naast Scale veranderen alle drie de waarden tegelijk.",
+        "Zakt de kubus weer half in de vloer? Klopt: hij is nu 200 hoog. Welke Z-waarde past nu?"
+      ],
+      "ui_profile": "foundation.details",
+      "highlight": {
+        "tab": "LevelEditorSelectionDetails"
+      },
+      "validate": {
+        "type": "transform_near",
+        "actor": {
+          "label": "Kubus"
+        },
+        "scale": [
+          2,
+          2,
+          2
+        ],
+        "scale_tolerance": 0.01
+      },
+      "solve": "t1_c01.solve_s09"
+    },
+    {
+      "id": "t1.c01.s10",
+      "title": "Plaats een lamp",
+      "instruction": "Sleep een Point Light uit het paneel Place Actors naar de viewport.",
+      "hints": [
+        "Point Light staat in de groep Lights."
+      ],
+      "ui_profile": "foundation.place",
+      "highlight": {
+        "tab": "PlacementBrowser"
+      },
+      "validate": {
+        "type": "actor_exists",
+        "actor": {
+          "class": "PointLight"
+        },
+        "min_count": 1
+      },
+      "solve": "t1_c01.solve_s10"
+    },
+    {
+      "id": "t1.c01.s11",
+      "title": "Hang de lamp boven de kubus",
+      "instruction": "Selecteer de lamp en typ bij Location: X 0, Y 0 en Z 300.",
+      "hints": [
+        "De lamp staat als 'PointLight' in de Outliner."
+      ],
+      "ui_profile": "foundation.place",
+      "highlight": {
+        "tab": "LevelEditorSelectionDetails"
+      },
+      "validate": {
+        "type": "transform_near",
+        "actor": {
+          "class": "PointLight"
+        },
+        "location": [
+          0,
+          0,
+          300
+        ],
+        "tolerance": 1
+      },
+      "solve": "t1_c01.solve_s11"
+    },
+    {
+      "id": "t1.c01.s12",
+      "title": "Maak het bereik kleiner",
+      "instruction": "Zoek in het Details-paneel naar Attenuation Radius en typ 500.",
+      "hints": [
+        "Typ 'radius' in het zoekveld bovenaan het Details-paneel."
+      ],
+      "ui_profile": "foundation.place",
+      "highlight": {
+        "tab": "LevelEditorSelectionDetails"
+      },
+      "validate": {
+        "type": "property_compare",
+        "actor": {
+          "class": "PointLight"
+        },
+        "property": "point_light_component.attenuation_radius",
+        "op": "==",
+        "value": 500,
+        "tolerance": 1
+      },
+      "solve": "t1_c01.solve_s12"
+    }
+  ]
+}

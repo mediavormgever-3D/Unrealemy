@@ -1,0 +1,25 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "Curriculum Core",
+	"Description": "Interactieve leerlijnen in de Unreal Editor: hub, micro-stappen, live validatie, highlight en reset.",
+	"Category": "Education",
+	"CreatedBy": "Vakgroep 3D",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "CurriculumCore",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "PythonScriptPlugin",
+			"Enabled": true
+		}
+	]
+}

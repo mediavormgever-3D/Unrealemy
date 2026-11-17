@@ -1,0 +1,11 @@
+{
+  "id": "foundation.viewport",
+  "description": "Alleen de viewport: geen Outliner, Details, Place Actors of Content Browser.",
+  "hide_tabs": [
+    "LevelEditorSceneOutliner",
+    "LevelEditorSelectionDetails",
+    "PlacementBrowser",
+    "ContentBrowserTab1"
+  ],
+  "show_tabs": []
+}

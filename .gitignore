@@ -1,0 +1,26 @@
+# Unreal build- en cachemappen
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+Plugins/*/Binaries/
+Plugins/*/Intermediate/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.sln
+*.suo
+*.VC.db
+*.opensdf
+*.sdf
+
+# Werk en back-ups van studenten horen niet in de repo
+Content/StudentWork/
+
+# Engine-broncode mag nooit in deze repo terechtkomen (Epic EULA)
+source/
+
+# Python
+__pycache__/
+*.pyc

@@ -1,0 +1,10 @@
+{
+  "id": "foundation.place",
+  "description": "Viewport, Outliner, Details en Place Actors.",
+  "hide_tabs": ["ContentBrowserTab1"],
+  "show_tabs": [
+    "LevelEditorSceneOutliner",
+    "LevelEditorSelectionDetails",
+    "PlacementBrowser"
+  ]
+}
