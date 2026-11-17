@@ -1,0 +1,166 @@
+{
+  "id": "t1.c02",
+  "number": 2,
+  "title": "Ordenen en onderdelen",
+  "summary": "Namen, mappen, parent en child in de Outliner, en components in het Details-paneel. Je bouwt een lantaarn.",
+  "starter_map": "/Engine/Maps/Templates/Template_Default",
+  "setup": "t1_c02.setup",
+  "ui_profile": "foundation.details",
+  "steps": [
+    {
+      "id": "t1.c02.s01",
+      "title": "Geef de cilinder een naam",
+      "instruction": "Klik in de Outliner op Cylinder, druk op F2, typ Paal en druk op Enter.",
+      "hints": [
+        "De Outliner is de lijst rechtsboven met alles wat in je scène staat.",
+        "Goede namen helpen je later: 'Cylinder' zegt niets, 'Paal' wel."
+      ],
+      "highlight": { "tab": "LevelEditorSceneOutliner" },
+      "validate": {
+        "type": "actor_exists",
+        "actor": { "label": "Paal", "mesh": "/Engine/BasicShapes/Cylinder.Cylinder" },
+        "message": "Hernoem de cilinder naar Paal: klik erop, druk op F2 en typ de nieuwe naam."
+      },
+      "solve": "t1_c02.solve_s01"
+    },
+    {
+      "id": "t1.c02.s02",
+      "title": "En nu de bol",
+      "instruction": "Hernoem Sphere op dezelfde manier naar Kap.",
+      "hints": ["Hoofdletters tellen mee: Kap, niet kap."],
+      "highlight": { "tab": "LevelEditorSceneOutliner" },
+      "validate": {
+        "type": "actor_exists",
+        "actor": { "label": "Kap", "mesh": "/Engine/BasicShapes/Sphere.Sphere" },
+        "message": "Hernoem de bol naar Kap: klik erop, druk op F2 en typ de nieuwe naam."
+      },
+      "solve": "t1_c02.solve_s02"
+    },
+    {
+      "id": "t1.c02.s03",
+      "title": "Maak een map",
+      "instruction": "Rechtsklik in de Outliner op Paal en kies Move To → Create New Folder. Noem de map Lantaarn.",
+      "hints": [
+        "Heet de map NewFolder? Dubbelklik op de naam om hem te veranderen.",
+        "Een map verandert niets aan je scène. Hij houdt alleen je lijst overzichtelijk."
+      ],
+      "highlight": { "tab": "LevelEditorSceneOutliner" },
+      "validate": { "type": "actor_in_folder", "actor": { "label": "Paal" }, "folder": "Lantaarn" },
+      "solve": "t1_c02.solve_s03"
+    },
+    {
+      "id": "t1.c02.s04",
+      "title": "Kap in de map",
+      "instruction": "Sleep Kap in de Outliner op de map Lantaarn.",
+      "hints": ["Laat de muisknop pas los als de map oplicht."],
+      "highlight": { "tab": "LevelEditorSceneOutliner" },
+      "validate": { "type": "actor_in_folder", "actor": { "label": "Kap" }, "folder": "Lantaarn" },
+      "solve": "t1_c02.solve_s04"
+    },
+    {
+      "id": "t1.c02.s05",
+      "title": "Koppel de kap aan de paal",
+      "instruction": "Sleep in de Outliner Kap op Paal. Kap staat nu onder Paal: Paal is de parent, Kap het child.",
+      "hints": [
+        "Sleep op de naam Paal, niet ernaast.",
+        "Ging het mis? Ctrl+Z maakt de laatste stap ongedaan."
+      ],
+      "highlight": { "tab": "LevelEditorSceneOutliner" },
+      "validate": { "type": "attached_to", "actor": { "label": "Kap" }, "parent": { "label": "Paal" } },
+      "solve": "t1_c02.solve_s05"
+    },
+    {
+      "id": "t1.c02.s06",
+      "title": "Verplaats de paal",
+      "instruction": "Selecteer Paal en sleep hem met de pijlen minstens 2 meter opzij. Kijk wat de kap doet.",
+      "hints": [
+        "2 meter is 200 eenheden in Unreal.",
+        "Een child beweegt altijd mee met zijn parent. Andersom niet."
+      ],
+      "highlight": { "tab": "LevelEditorViewport" },
+      "validate": {
+        "all": [
+          { "type": "actor_moved", "actor": { "label": "Paal" }, "min_distance": 200 },
+          { "type": "attached_to", "actor": { "label": "Kap" }, "parent": { "label": "Paal" } }
+        ]
+      },
+      "solve": "t1_c02.solve_s06"
+    },
+    {
+      "id": "t1.c02.s07",
+      "title": "Bekijk de onderdelen",
+      "instruction": "Selecteer Kap. Bovenaan het Details-paneel zie je de components: de onderdelen van een actor.",
+      "hints": [
+        "Kap heeft nu één component: StaticMeshComponent. Dat is de vorm.",
+        "Elke actor bestaat uit components. Een lamp, een camera of een geluid is ook een component."
+      ],
+      "highlight": { "tab": "LevelEditorSelectionDetails" },
+      "validate": { "type": "selection_is", "actor": { "label": "Kap" } },
+      "solve": "t1_c02.solve_s07"
+    },
+    {
+      "id": "t1.c02.s08",
+      "title": "Zet een lamp in de kap",
+      "instruction": "Klik met Kap geselecteerd in het Details-paneel op + Add en kies Point Light.",
+      "hints": [
+        "Typ 'point' in het zoekveld van + Add.",
+        "De lamp is nu een onderdeel van Kap. Hij beweegt dus mee met Kap, en dus ook met Paal."
+      ],
+      "highlight": { "tab": "LevelEditorSelectionDetails" },
+      "validate": { "type": "component_exists", "actor": { "label": "Kap" }, "class": "PointLightComponent" },
+      "solve": "t1_c02.solve_s08"
+    },
+    {
+      "id": "t1.c02.s09",
+      "title": "Laat het licht door",
+      "instruction": "De bol houdt zijn eigen licht tegen. Klik op StaticMeshComponent van Kap en zet Cast Shadow uit.",
+      "hints": [
+        "Typ 'shadow' in het zoekveld van het Details-paneel.",
+        "De lamp zit binnen in de bol. Zolang de bol schaduw geeft, blijft het licht binnen."
+      ],
+      "highlight": { "tab": "LevelEditorSelectionDetails" },
+      "validate": {
+        "type": "property_compare",
+        "actor": { "label": "Kap" },
+        "property": "static_mesh_component.cast_shadow",
+        "op": "==",
+        "value": false
+      },
+      "solve": "t1_c02.solve_s09"
+    },
+    {
+      "id": "t1.c02.s10",
+      "title": "Maak het lichtbereik kleiner",
+      "instruction": "Klik op de PointLight-component van Kap en zet Attenuation Radius op 400.",
+      "hints": ["Elke component heeft zijn eigen instellingen. Klik eerst de juiste component aan."],
+      "highlight": { "tab": "LevelEditorSelectionDetails" },
+      "validate": {
+        "type": "property_compare",
+        "actor": { "label": "Kap" },
+        "component": "PointLightComponent",
+        "property": "attenuation_radius",
+        "op": "==",
+        "value": 400,
+        "tolerance": 1
+      },
+      "solve": "t1_c02.solve_s10"
+    },
+    {
+      "id": "t1.c02.s11",
+      "title": "Zet de lantaarn op zijn plek",
+      "instruction": "Selecteer Paal en typ bij Location: X 0, Y 0, Z 150. De hele lantaarn verhuist mee.",
+      "hints": [
+        "Je hoeft de kap niet apart te verplaatsen: hij is een child van Paal.",
+        "Waarom Z 150? De paal is 300 hoog en het draaipunt zit in het midden."
+      ],
+      "highlight": { "tab": "LevelEditorSelectionDetails" },
+      "validate": {
+        "all": [
+          { "type": "transform_near", "actor": { "label": "Paal" }, "location": [0, 0, 150], "tolerance": 1 },
+          { "type": "attached_to", "actor": { "label": "Kap" }, "parent": { "label": "Paal" } }
+        ]
+      },
+      "solve": "t1_c02.solve_s11"
+    }
+  ]
+}

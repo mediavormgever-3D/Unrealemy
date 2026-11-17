@@ -8,7 +8,8 @@ Afspraken:
   * afstanden in Unreal-eenheden (1 = 1 cm);
   * rotatie als (roll, pitch, yaw) in graden: dezelfde volgorde als X, Y, Z
     bij Rotation in het Details-paneel;
-  * een *selector* is een dict met ``label`` en/of ``class``.
+  * een *selector* is een dict met ``label``, ``class`` en/of ``mesh``
+    (asset-pad van de static mesh, bv. ``/Engine/BasicShapes/Cube.Cube``).
 """
 
 from __future__ import annotations
@@ -32,6 +33,9 @@ class ActorView:
     rotation: Rot3
     scale: Vec3
     handle: Any = None
+    folder: str = ""                # map in de Outliner, "" = geen map
+    parent: Optional[str] = None    # label van de parent-actor
+    mesh: Optional[str] = None      # asset-pad van de static mesh
 
 
 def matches(actor: ActorView, selector: Selector) -> bool:
@@ -39,13 +43,19 @@ def matches(actor: ActorView, selector: Selector) -> bool:
         return False
     if "class" in selector and actor.class_name != selector["class"]:
         return False
+    if "mesh" in selector and actor.mesh != selector["mesh"]:
+        return False
     return True
 
 
 def describe(selector: Selector) -> str:
     if "label" in selector:
         return f"'{selector['label']}'"
-    return f"een {selector.get('class', 'actor')}"
+    if "class" in selector:
+        return f"een {selector['class']}"
+    if "mesh" in selector:
+        return f"een {selector['mesh'].rsplit('/', 1)[-1].split('.')[0]}"
+    return "een actor"
 
 
 def distance(a: Sequence[float], b: Sequence[float]) -> float:
@@ -112,6 +122,13 @@ class Scene:
     def blueprint_exec_linked(self, blueprint_path: str, event: str, function: str) -> bool:
         raise NotImplementedError
 
+    def components(self, actor: ActorView, class_name: str) -> List[Any]:
+        """Components van deze klasse op de actor (bv. ``PointLightComponent``)."""
+        raise NotImplementedError
+
+    def get_component_property(self, component: Any, path: str) -> Any:
+        raise NotImplementedError
+
     # --- schrijven ---
     def load_starter_map(self, map_path: str) -> None:
         """Open een *kopie* van de startmap; het origineel blijft onaangeroerd."""
@@ -143,6 +160,22 @@ class Scene:
         raise NotImplementedError
 
     def set_camera(self, location: Vec3, rotation: Rot3) -> None:
+        raise NotImplementedError
+
+    def rename(self, selector: Selector, new_label: str) -> None:
+        raise NotImplementedError
+
+    def set_folder(self, selector: Selector, folder: str) -> None:
+        raise NotImplementedError
+
+    def attach(self, child: Selector, parent: Selector) -> None:
+        """Zoals slepen in de Outliner: het child behoudt zijn plek in de wereld."""
+        raise NotImplementedError
+
+    def add_component(self, selector: Selector, class_name: str) -> None:
+        raise NotImplementedError
+
+    def set_component_property(self, selector: Selector, class_name: str, path: str, value: Any) -> None:
         raise NotImplementedError
 
     # --- gedeelde hulpfuncties ---

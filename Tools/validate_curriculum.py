@@ -73,6 +73,14 @@ def schema_check(validator, data, path: Path, report: Report) -> bool:
     return not problems
 
 
+def schema_type_enum(schema_path: Path) -> list:
+    checks = json.loads(schema_path.read_text(encoding="utf-8"))["$defs"]["check"]["allOf"]
+    for check in checks:
+        if check.get("if") == {"required": ["type"]}:
+            return check["then"]["properties"]["type"]["enum"]
+    return []
+
+
 def callable_exists(reference: str) -> bool:
     module_name, function_name = reference.rsplit(".", 1)
     try:
@@ -94,6 +102,14 @@ def main() -> int:
     report = Report()
     validators = {name: load_schema_validator(name) for name in ("curriculum", "track", "chapter", "ui_profile")}
     types = set(known_types())
+
+    schema_path = CURRICULUM / "schema" / "curriculum.schema.json"
+    schema_types = set(schema_type_enum(schema_path))
+    if schema_types != types:
+        if types - schema_types:
+            report.error(schema_path, f"validatortypen ontbreken in het schema: {sorted(types - schema_types)}")
+        if schema_types - types:
+            report.error(schema_path, f"schema noemt typen die niet in validators.py staan: {sorted(schema_types - types)}")
 
     profiles = {}
     for profile_path in sorted((CURRICULUM / "ui_profiles").glob("*.json")):

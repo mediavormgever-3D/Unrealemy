@@ -19,6 +19,7 @@ Aan de engine zelf verandert niets.
 | Leerlijnen in JSON, schema, controlescript | Werkt; automatisch getest |
 | Validatie, reset, solve (Python-logica) | Werkt; getest met een nagebootste scène |
 | Hoofdstuk T1.01 *Eerste stappen* (12 stappen) | Getest met de nagebootste scène, nog niet in de editor |
+| Hoofdstuk T1.02 *Ordenen en onderdelen* (11 stappen) | Getest met de nagebootste scène, nog niet in de editor |
 | C++-plugin: hub, stappenpaneel, highlight, UI-profielen | **Nooit gecompileerd.** Geschreven tegen UE 5.x, niet gecontroleerd tegen 5.8 |
 | `scene_unreal.py` (koppeling met de echte editor) | **Nooit in de editor gedraaid** |
 | Tracks 2 t/m 6 | Alleen de tegels in de hub; nog geen hoofdstukken |
@@ -101,13 +102,17 @@ Docentmodus (`UNREALEMY_TEACHER=1` of `bTeacherMode=True`) geeft twee extra knop
 | `transform_near` | Location, Rotation en/of Scale binnen een marge |
 | `actor_moved` | Actor minstens X cm verplaatst sinds het begin van de stap |
 | `selection_is` | Precies deze actor is geselecteerd |
-| `property_compare` | Eigenschap vergelijken, bv. `point_light_component.attenuation_radius == 500` |
+| `property_compare` | Eigenschap vergelijken, bv. `point_light_component.attenuation_radius == 500`; met `component` op een component |
+| `actor_in_folder` | Actor staat in deze map van de Outliner |
+| `attached_to` | Actor is een child van een andere actor |
+| `component_exists` | Actor heeft een component van deze klasse, bv. `PointLightComponent` |
 | `viewport_camera_moved` / `_rotated` | De student heeft gevlogen of rondgekeken |
 | `viewport_looks_at` | De camera kijkt van dichtbij naar een actor (toets F) |
 | `material_input_from` | Er hangt een bepaalde node aan een materiaalingang, bv. een ScalarParameter aan Roughness |
 | `blueprint_exec_linked` | Een event is via exec-lijnen verbonden met een functie, bv. BeginPlay met PrintString |
 
-Combineer checks met `{"all": [...]}` of `{"any": [...]}`. Een `message` per check
+Een actor kies je op `label`, `class` en/of `mesh` (asset-pad). `mesh` blijft werken als de student
+de actor hernoemt. Combineer checks met `{"all": [...]}` of `{"any": [...]}`. Een `message` per check
 vervangt de standaardmelding. Een nieuw type schrijf je in `validators.py` en voeg je
 toe aan het schema.
 
@@ -156,6 +161,10 @@ Deze punten zijn geschreven op basis van kennis van UE 5.x en nog niet gecontrol
 
 - Geeft `get_level_viewport_camera_info()` een tuple terug, of `None` zonder actieve viewport?
 - Werken `EditorLoadingAndSavingUtils.new_map_from_template` en `save_map` zoals verwacht?
+- Hoofdstuk T1.02: werken `get_folder_path` / `set_folder_path`, `get_attach_parent_actor` /
+  `attach_to_actor` en vooral `SubobjectDataSubsystem.add_new_subobject` (component toevoegen
+  via Python, nodig voor **Reset stap** vanaf stap 9)?
+- Bestaat *Move To → Create New Folder* nog in het rechtsklikmenu van de Outliner (T1.02 stap 3)?
 
 **Reset**
 

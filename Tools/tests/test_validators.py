@@ -100,6 +100,73 @@ class ValidatorTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             evaluate({"type": "bestaat_niet"}, Context(FakeScene()))
 
+    def test_mesh_selector_survives_rename(self):
+        scene = scene_with_cube()
+        scene.rename({"label": "Kubus"}, "Doos")
+        spec = {"type": "actor_exists", "actor": {"mesh": "/Engine/BasicShapes/Cube.Cube", "label": "Doos"}}
+        self.assertTrue(evaluate(spec, Context(scene)).passed)
+        self.assertFalse(evaluate({**spec, "actor": {"mesh": "/Engine/BasicShapes/Sphere.Sphere"}}, Context(scene)).passed)
+
+    def test_folder_message_names_wrong_folder(self):
+        scene = scene_with_cube()
+        spec = {"type": "actor_in_folder", "actor": {"label": "Kubus"}, "folder": "Lantaarn"}
+        self.assertIn("nog niet in een map", evaluate(spec, Context(scene)).message)
+        scene.set_folder({"label": "Kubus"}, "NewFolder")
+        self.assertIn("'NewFolder'", evaluate(spec, Context(scene)).message)
+        scene.set_folder({"label": "Kubus"}, "Lantaarn")
+        self.assertTrue(evaluate(spec, Context(scene)).passed)
+
+    def test_attached_to_and_wrong_parent(self):
+        scene = scene_with_cube()
+        scene.spawn_static_mesh("/Engine/BasicShapes/Sphere.Sphere", "Bol", (0.0, 0.0, 200.0))
+        spec = {"type": "attached_to", "actor": {"label": "Bol"}, "parent": {"label": "Kubus"}}
+        self.assertIn("Sleep hem", evaluate(spec, Context(scene)).message)
+        scene.attach({"label": "Bol"}, {"label": "Floor"})
+        self.assertIn("'Floor'", evaluate(spec, Context(scene)).message)
+        scene.attach({"label": "Bol"}, {"label": "Kubus"})
+        self.assertTrue(evaluate(spec, Context(scene)).passed)
+
+    def test_component_property_and_plain_language(self):
+        scene = scene_with_cube()
+        spec = {"type": "property_compare", "actor": {"label": "Kubus"}, "component": "PointLightComponent",
+                "property": "attenuation_radius", "op": "==", "value": 400, "tolerance": 1}
+        self.assertIn("nog geen PointLightComponent", evaluate(spec, Context(scene)).message)
+        scene.add_component({"label": "Kubus"}, "PointLightComponent")
+        self.assertEqual(evaluate(spec, Context(scene)).message, "Attenuation Radius is 1000. Doel: 400.")
+        scene.set_component_property({"label": "Kubus"}, "PointLightComponent", "attenuation_radius", 400.0)
+        self.assertTrue(evaluate(spec, Context(scene)).passed)
+
+    def test_boolean_property_message(self):
+        scene = scene_with_cube()
+        spec = {"type": "property_compare", "actor": {"label": "Kubus"},
+                "property": "static_mesh_component.cast_shadow", "op": "==", "value": False}
+        self.assertEqual(evaluate(spec, Context(scene)).message, "Cast Shadow staat nog aan. Zet hem uit.")
+
+
+class FakeSceneTest(unittest.TestCase):
+    def test_child_follows_parent_but_not_the_other_way(self):
+        scene = scene_with_cube()
+        scene.spawn_static_mesh("/Engine/BasicShapes/Sphere.Sphere", "Bol", (0.0, 0.0, 200.0))
+        scene.attach({"label": "Bol"}, {"label": "Kubus"})
+        scene.set_transform({"label": "Kubus"}, location=(100.0, 0.0, 50.0))
+        self.assertEqual(scene.find_one({"label": "Bol"}).location, (100.0, 0.0, 200.0))
+        scene.set_transform({"label": "Bol"}, location=(100.0, 0.0, 300.0))
+        self.assertEqual(scene.find_one({"label": "Kubus"}).location, (100.0, 0.0, 50.0))
+
+    def test_attach_cycle_is_refused(self):
+        scene = scene_with_cube()
+        scene.spawn_static_mesh("/Engine/BasicShapes/Sphere.Sphere", "Bol", (0.0, 0.0, 200.0))
+        scene.attach({"label": "Bol"}, {"label": "Kubus"})
+        with self.assertRaises(ValueError):
+            scene.attach({"label": "Kubus"}, {"label": "Bol"})
+
+    def test_destroying_parent_detaches_children(self):
+        scene = scene_with_cube()
+        scene.spawn_static_mesh("/Engine/BasicShapes/Sphere.Sphere", "Bol", (0.0, 0.0, 200.0))
+        scene.attach({"label": "Bol"}, {"label": "Kubus"})
+        scene.destroy({"label": "Kubus"})
+        self.assertIsNone(scene.find_one({"label": "Bol"}).parent)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -31,10 +31,24 @@ def _rot(values) -> "unreal.Rotator":
     return unreal.Rotator(roll=float(values[0]), pitch=float(values[1]), yaw=float(values[2]))
 
 
+def _folder(actor) -> str:
+    folder = str(actor.get_folder_path())
+    return "" if folder in ("", "None") else folder
+
+
+def _mesh(actor) -> Optional[str]:
+    component = getattr(actor, "static_mesh_component", None)  # alleen bij StaticMeshActor
+    if component is None:
+        return None
+    mesh = component.get_editor_property("static_mesh")
+    return mesh.get_path_name() if mesh else None
+
+
 def _view(actor) -> ActorView:
     loc = actor.get_actor_location()
     rot = actor.get_actor_rotation()
     scale = actor.get_actor_scale3d()
+    parent = actor.get_attach_parent_actor()
     return ActorView(
         label=actor.get_actor_label(),
         class_name=actor.get_class().get_name(),
@@ -42,6 +56,9 @@ def _view(actor) -> ActorView:
         rotation=(rot.roll, rot.pitch, rot.yaw),
         scale=(scale.x, scale.y, scale.z),
         handle=actor,
+        folder=_folder(actor),
+        parent=parent.get_actor_label() if parent else None,
+        mesh=_mesh(actor),
     )
 
 
@@ -91,6 +108,15 @@ class UnrealScene(Scene):
         if blueprint is None:
             raise LookupError(f"Blueprint niet gevonden: {blueprint_path}")
         return bool(unreal.CurriculumInspectionLibrary.is_event_linked_to_function(blueprint, event, function, 8))
+
+    def components(self, actor: ActorView, class_name: str) -> List[Any]:
+        return list(actor.handle.get_components_by_class(getattr(unreal, class_name)))
+
+    def get_component_property(self, component, path: str) -> Any:
+        value = component
+        for part in path.split("."):
+            value = value.get_editor_property(part)
+        return value
 
     # --- schrijven ---
     def load_starter_map(self, map_path: str) -> None:
@@ -167,3 +193,33 @@ class UnrealScene(Scene):
 
     def set_camera(self, location, rotation):
         _editor_sub().set_level_viewport_camera_info(_vec(location), _rot(rotation))
+
+    def rename(self, selector, new_label):
+        self.find_one(selector).handle.set_actor_label(new_label)
+
+    def set_folder(self, selector, folder):
+        self.find_one(selector).handle.set_folder_path(folder)
+
+    def attach(self, child, parent):
+        keep = unreal.AttachmentRule.KEEP_WORLD
+        self.find_one(child).handle.attach_to_actor(self.find_one(parent).handle, "", keep, keep, keep, False)
+
+    def add_component(self, selector, class_name):
+        # Zelfde route als '+ Add' in het Details-paneel: een instance-component op een geplaatste actor.
+        actor = self.find_one(selector).handle
+        subobjects = unreal.get_engine_subsystem(unreal.SubobjectDataSubsystem)
+        handles = subobjects.k2_gather_subobject_data_for_instance(actor)
+        params = unreal.AddNewSubobjectParams(parent_handle=handles[0], new_class=getattr(unreal, class_name))
+        _, failure = subobjects.add_new_subobject(params)
+        if str(failure):
+            raise RuntimeError(f"Component {class_name} niet toegevoegd: {failure}")
+
+    def set_component_property(self, selector, class_name, path, value):
+        components = self.components(self.find_one(selector), class_name)
+        if not components:
+            raise LookupError(f"Geen {class_name} op {selector}")
+        owner = components[0]
+        parts = path.split(".")
+        for part in parts[:-1]:
+            owner = owner.get_editor_property(part)
+        owner.set_editor_property(parts[-1], value)

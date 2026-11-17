@@ -3,5 +3,8 @@
   "number": 1,
   "title": "Foundation",
   "summary": "De basis vanaf 0,0,0: viewport, coördinaten, transformaties, Outliner, Actors en licht.",
-  "chapters": ["c01-eerste-stappen.json"]
+  "chapters": [
+    "c01-eerste-stappen.json",
+    "c02-ordenen.json"
+  ]
 }

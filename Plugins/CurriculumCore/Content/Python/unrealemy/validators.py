@@ -151,27 +151,94 @@ _OPS = {"==": operator.eq, "!=": operator.ne, "<": operator.lt, "<=": operator.l
         ">": operator.gt, ">=": operator.ge}
 
 
+def _is_number(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _show(value) -> str:
+    if isinstance(value, bool):
+        return "aan" if value else "uit"
+    return fmt(value) if _is_number(value) else repr(value)
+
+
 @validator("property_compare")
 def property_compare(spec, ctx):
+    """Met ``component`` wordt de eigenschap op elke component van die klasse gelezen."""
     found = ctx.scene.find(spec["actor"])
     if not found:
         return _missing(spec["actor"])
+
+    if "component" in spec:
+        components = [c for actor in found for c in ctx.scene.components(actor, spec["component"])]
+        if not components:
+            return Result(False, f"{found[0].label} heeft nog geen {spec['component']}.")
+        values = [ctx.scene.get_component_property(c, spec["property"]) for c in components]
+    else:
+        values = [ctx.scene.get_property(actor, spec["property"]) for actor in found]
+
     op, target = spec["op"], spec["value"]
     tolerance = spec.get("tolerance", 0.0)
-    name = _pretty_property(spec["property"])
-    last = None
-    for actor in found:
-        value = ctx.scene.get_property(actor, spec["property"])
-        last = value
-        if isinstance(target, (int, float)) and not isinstance(target, bool) and op in ("==", "!="):
+    for value in values:
+        if _is_number(target) and op in ("==", "!="):
             equal = abs(float(value) - float(target)) <= tolerance
             if equal == (op == "=="):
                 return Result(True)
         elif _OPS[op](value, target):
             return Result(True)
-    shown = fmt(last) if isinstance(last, (int, float)) and not isinstance(last, bool) else repr(last)
-    wanted = fmt(target) if isinstance(target, (int, float)) and not isinstance(target, bool) else repr(target)
-    return Result(False, f"{name} is {shown}. Doel: {op} {wanted}.")
+
+    name = _pretty_property(spec["property"])
+    if isinstance(target, bool) and op == "==":
+        return Result(False, f"{name} staat nog {_show(values[0])}. Zet hem {_show(target)}.")
+    return Result(False, f"{name} is {_show(values[0])}. Doel: {_OP_WORDS[op]}{_show(target)}.")
+
+
+_OP_WORDS = {"==": "", "!=": "niet ", "<": "minder dan ", "<=": "hoogstens ", ">": "meer dan ", ">=": "minstens "}
+
+
+# --- Outliner en components -----------------------------------------------------------
+
+@validator("actor_in_folder")
+def actor_in_folder(spec, ctx):
+    found = ctx.scene.find(spec["actor"])
+    if not found:
+        return _missing(spec["actor"])
+    if any(actor.folder == spec["folder"] for actor in found):
+        return Result(True)
+    actor = found[0]
+    if not actor.folder:
+        return Result(False, f"{actor.label} staat nog niet in een map.")
+    return Result(False, f"{actor.label} staat in de map '{actor.folder}'. Verwacht: '{spec['folder']}'.")
+
+
+@validator("attached_to")
+def attached_to(spec, ctx):
+    found = ctx.scene.find(spec["actor"])
+    if not found:
+        return _missing(spec["actor"])
+    parents = {parent.label for parent in ctx.scene.find(spec["parent"])}
+    if not parents:
+        return _missing(spec["parent"])
+    if any(actor.parent in parents for actor in found):
+        return Result(True)
+    actor = found[0]
+    if actor.parent:
+        return Result(False, f"{actor.label} hangt onder '{actor.parent}' in plaats van onder {describe(spec['parent'])}.")
+    return Result(False, f"{actor.label} hangt nog niet onder {describe(spec['parent'])}. "
+                         f"Sleep hem in de Outliner op {describe(spec['parent'])}.")
+
+
+@validator("component_exists")
+def component_exists(spec, ctx):
+    found = ctx.scene.find(spec["actor"])
+    if not found:
+        return _missing(spec["actor"])
+    needed = spec.get("min_count", 1)
+    counts = [len(ctx.scene.components(actor, spec["class"])) for actor in found]
+    if max(counts) >= needed:
+        return Result(True)
+    if max(counts) == 0:
+        return Result(False, f"{found[0].label} heeft nog geen {spec['class']}. Voeg hem toe met + Add in het Details-paneel.")
+    return Result(False, f"{found[0].label} heeft {max(counts)} keer {spec['class']}. Nodig: {needed}.")
 
 
 # --- viewport-camera ------------------------------------------------------------------

@@ -1,6 +1,8 @@
 """Nagebootste scène zonder Unreal, voor automatische tests van de leerlijnen.
 
 Bootst alleen na wat de validators en de setup-/solve-functies gebruiken.
+Vereenvoudiging: een child beweegt mee met de *locatie* van zijn parent,
+niet met rotatie of schaal.
 """
 
 from __future__ import annotations
@@ -8,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
-from .scene import ActorView, Rot3, Scene, Selector, Vec3, matches
+from .scene import ActorView, Rot3, Scene, Selector, Vec3
 
 # Wat de standaard-startmap ongeveer bevat. Precieze inhoud is niet belangrijk voor de tests.
 TEMPLATE_ACTORS = [
@@ -32,10 +34,21 @@ CLASS_DEFAULTS: Dict[str, Dict[str, Any]] = {
     },
 }
 
+COMPONENT_DEFAULTS: Dict[str, Dict[str, Any]] = {
+    "PointLightComponent": {"attenuation_radius": 1000.0, "cast_shadows": True},
+    "SpotLightComponent": {"attenuation_radius": 1000.0, "cast_shadows": True},
+}
+
 DEFAULT_CAMERA: Tuple[Vec3, Rot3] = ((-1000.0, 0.0, 400.0), (0.0, -15.0, 0.0))
 
 
 @dataclass
+class FakeComponent:
+    class_name: str
+    props: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(eq=False)
 class FakeActor:
     label: str
     class_name: str
@@ -43,6 +56,10 @@ class FakeActor:
     rotation: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     scale: List[float] = field(default_factory=lambda: [1.0, 1.0, 1.0])
     props: Dict[str, Any] = field(default_factory=dict)
+    folder: str = ""
+    parent: Optional["FakeActor"] = None
+    mesh: Optional[str] = None
+    components: List[FakeComponent] = field(default_factory=list)
 
 
 class FakeScene(Scene):
@@ -59,7 +76,8 @@ class FakeScene(Scene):
 
     # --- lezen ---
     def actors(self) -> List[ActorView]:
-        return [ActorView(a.label, a.class_name, tuple(a.location), tuple(a.rotation), tuple(a.scale), a)
+        return [ActorView(a.label, a.class_name, tuple(a.location), tuple(a.rotation), tuple(a.scale), a,
+                          folder=a.folder, parent=a.parent.label if a.parent else None, mesh=a.mesh)
                 for a in self._actors]
 
     def selected_labels(self) -> List[str]:
@@ -79,6 +97,14 @@ class FakeScene(Scene):
 
     def blueprint_exec_linked(self, blueprint_path, event, function):
         return (blueprint_path, event, function) in self.blueprint_links
+
+    def components(self, actor: ActorView, class_name: str) -> List[FakeComponent]:
+        return [c for c in actor.handle.components if c.class_name == class_name]
+
+    def get_component_property(self, component: FakeComponent, path: str) -> Any:
+        if path not in component.props:
+            raise AttributeError(f"{component.class_name} heeft geen eigenschap {path}")
+        return component.props[path]
 
     # --- schrijven ---
     def load_starter_map(self, map_path: str) -> None:
@@ -104,10 +130,21 @@ class FakeScene(Scene):
             number += 1
         return f"{base}{number}"
 
+    def _one(self, selector: Selector) -> FakeActor:
+        return self.find_one(selector).handle
+
+    def _descendants(self, actor: FakeActor) -> List[FakeActor]:
+        children = [a for a in self._actors if a.parent is actor]
+        result = list(children)
+        for child in children:
+            result.extend(self._descendants(child))
+        return result
+
     def spawn_static_mesh(self, mesh_path, label, location, rotation=(0.0, 0.0, 0.0), scale=(1.0, 1.0, 1.0)):
-        self._actors.append(FakeActor(self._unique_label(label), "StaticMeshActor", list(location),
-                                      list(rotation), list(scale),
-                                      {"static_mesh_component.static_mesh": mesh_path}))
+        self._actors.append(FakeActor(
+            self._unique_label(label), "StaticMeshActor", list(location), list(rotation), list(scale),
+            props={"static_mesh_component.static_mesh": mesh_path, "static_mesh_component.cast_shadow": True},
+            mesh=mesh_path))
         self.dirty = True
 
     def spawn_actor(self, class_name, location, rotation=(0.0, 0.0, 0.0), label=None):
@@ -116,15 +153,22 @@ class FakeScene(Scene):
         self.dirty = True
 
     def destroy(self, selector: Selector) -> None:
-        doomed = {a.label for a in self.find(selector)}
-        self._actors = [a for a in self._actors if a.label not in doomed]
-        self._selected = [label for label in self._selected if label not in doomed]
+        doomed = [a.handle for a in self.find(selector)]
+        for actor in self._actors:
+            if actor.parent in doomed:
+                actor.parent = None  # zoals Unreal: children blijven staan, losgekoppeld
+        self._actors = [a for a in self._actors if a not in doomed]
+        labels = {a.label for a in doomed}
+        self._selected = [label for label in self._selected if label not in labels]
         self.dirty = self.dirty or bool(doomed)
 
     def set_transform(self, selector, location=None, rotation=None, scale=None):
-        actor = self.find_one(selector).handle
+        actor = self._one(selector)
         if location is not None:
+            delta = [new - old for old, new in zip(actor.location, location)]
             actor.location = list(location)
+            for child in self._descendants(actor):
+                child.location = [c + d for c, d in zip(child.location, delta)]
         if rotation is not None:
             actor.rotation = list(rotation)
         if scale is not None:
@@ -132,7 +176,7 @@ class FakeScene(Scene):
         self.dirty = True
 
     def set_property(self, selector, path, value):
-        actor = self.find_one(selector).handle
+        actor = self._one(selector)
         if path not in actor.props:
             raise AttributeError(f"{actor.class_name} heeft geen eigenschap {path}")
         actor.props[path] = value
@@ -144,3 +188,40 @@ class FakeScene(Scene):
 
     def set_camera(self, location, rotation):
         self._camera = (tuple(location), tuple(rotation))
+
+    def rename(self, selector, new_label):
+        actor = self._one(selector)
+        self._selected = [new_label if label == actor.label else label for label in self._selected]
+        actor.label = new_label
+        self.dirty = True
+
+    def set_folder(self, selector, folder):
+        self._one(selector).folder = folder
+        self.dirty = True
+
+    def attach(self, child, parent):
+        child_actor, parent_actor = self._one(child), self._one(parent)
+        if child_actor is parent_actor or child_actor in [parent_actor, *self._parents(parent_actor)]:
+            raise ValueError("Een actor kan niet aan zichzelf of aan zijn eigen child hangen")
+        child_actor.parent = parent_actor
+        self.dirty = True
+
+    def _parents(self, actor: FakeActor) -> List[FakeActor]:
+        chain = []
+        while actor.parent is not None:
+            actor = actor.parent
+            chain.append(actor)
+        return chain
+
+    def add_component(self, selector, class_name):
+        self._one(selector).components.append(FakeComponent(class_name, dict(COMPONENT_DEFAULTS.get(class_name, {}))))
+        self.dirty = True
+
+    def set_component_property(self, selector, class_name, path, value):
+        found = [c for c in self._one(selector).components if c.class_name == class_name]
+        if not found:
+            raise LookupError(f"Geen {class_name} op {selector}")
+        if path not in found[0].props:
+            raise AttributeError(f"{class_name} heeft geen eigenschap {path}")
+        found[0].props[path] = value
+        self.dirty = True
